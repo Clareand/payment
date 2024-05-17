@@ -8,6 +8,7 @@ class Transaction extends Schema {
       table.uuid('transaction_id').primary().defaultTo(this.db.raw('uuid_generate_v4()'))
       table.uuid('customer_id').unsigned().references('customer_id').inTable('md_customers')
       table.enu('type', ['deposit', 'withdrawal']).notNullable()
+      table.integer('status')
       table.integer('amount').notNullable()
       table.string('order_id').notNullable()
       table.timestamp('created_at', { useTz: false }).defaultTo(this.fn.now()).nullable()

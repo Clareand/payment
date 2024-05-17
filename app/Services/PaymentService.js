@@ -6,7 +6,7 @@ class PaymentService {
   
     static async processWithdrawal(amount) {
       // Simulate third-party payment processing
-      return { success: true, message: 'Withdrawal processed' }
+      return { success: true, message: 'Withdrawal processed',status:1  }
     }
   }
   
