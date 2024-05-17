@@ -8,15 +8,16 @@ const Database = use('Database')
 class TransactionController {
   async deposit({ request, response }) {
     
-    const { CustomerId, amount, orderId, timestamp } = request.only(['CustomerId', 'amount', 'orderId', 'timestamp'])
-    console.log('orderID',orderId)
+    const {amount, orderId, timestamp } = request.only(['amount', 'orderId', 'timestamp'])
+    const customerId = request.CustomerId;
+    console.log('CustomerId',customerId)
 
     // Start a transaction
     const trx = await Database.beginTransaction()
 
     try {
       // Lock the customer record for update within the transaction
-      const customerInstance = await Customer.query(trx).where('customer_id', CustomerId).forUpdate().first()
+      const customerInstance = await Customer.query(trx).where('customer_id', customerId).forUpdate().first()
 
       if (!customerInstance) {
         await trx.rollback()
@@ -31,17 +32,26 @@ class TransactionController {
         await customerInstance.save(trx)
 
         const transaction = await Transaction.create({
-          customer_id: CustomerId,
+          customer_id: customerId,
           type: 'deposit',
           amount,
           order_id: orderId,
-          created_at:timestamp
+          created_at:timestamp,
+          status : 1
         }, trx)
 
         await trx.commit()
         return response.status(201).json(transaction)
       } else {
-        await trx.rollback()
+        const transaction = await Transaction.create({
+          customer_id: customerId,
+          type: 'deposit',
+          amount,
+          order_id: orderId,
+          created_at:timestamp,
+          status : 2
+        }, trx)
+        await trx.commit
         return response.status(500).json({ message: 'Deposit failed' })
       }
     } catch (error) {

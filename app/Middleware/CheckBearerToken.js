@@ -1,5 +1,6 @@
 'use strict'
 
+const jwt = require('jsonwebtoken');
 const Customer = use('App/Models/Customer')
 
 class CheckBearerToken {
@@ -28,14 +29,28 @@ class CheckBearerToken {
     }
 
     // Fetch the full name from the database
-    const user = await Customer.query().where('username', decodedToken).first()
+    const customer = await Customer.query().where('username', decodedToken).first();
 
-    // Check if the user exists
-    if (!user) {
+    // Check if the customer exists
+    if (!customer) {
       return response.status(401).send({
         message: 'Invalid Bearer token',
-      })
+      });
     }
+
+    // Extract the CustomerId from the customer record
+    const { customer_id: CustomerId } = customer;
+    console.log(customer,"Ids")
+
+    // Check if the CustomerId is present
+    if (!CustomerId) {
+      return response.status(401).send({
+        message: 'CustomerId not found in token',
+      });
+    }
+
+    // Attach the CustomerId to the request object for further use
+    request.CustomerId = CustomerId;
 
     // Proceed to the next middleware or controller
     await next()
