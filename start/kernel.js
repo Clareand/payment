@@ -18,6 +18,8 @@ const globalMiddleware = [
   'Adonis/Middleware/Shield',
   'Adonis/Middleware/AuthInit',
   'App/Middleware/ConvertEmptyStringsToNull',
+  'App/Middleware/Test',
+  'App/Middleware/CheckBearerToken'
 ]
 
 /*
@@ -39,7 +41,9 @@ const globalMiddleware = [
 */
 const namedMiddleware = {
   auth: 'Adonis/Middleware/Auth',
-  guest: 'Adonis/Middleware/AllowGuestOnly'
+  guest: 'Adonis/Middleware/AllowGuestOnly',
+  test: 'App/Middleware/Test',
+  checkBearer:'App/Middleware/CheckBearerToken'
 }
 
 /*
@@ -54,7 +58,7 @@ const namedMiddleware = {
 */
 const serverMiddleware = [
   'Adonis/Middleware/Static',
-  'Adonis/Middleware/Cors'
+  'Adonis/Middleware/Cors',
 ]
 
 Server

@@ -17,3 +17,10 @@
 const Route = use('Route')
 
 Route.on('/').render('welcome')
+
+Route.group(()=>{
+    Route.get('/test', 'DatabaseController.checkConnection').middleware(['checkBearer'])
+    Route.post('/users', 'UserController.create')
+    Route.post('/deposit', 'TransactionController.deposit').middleware(['checkBearer'])
+    Route.post('/withdraw', 'Transaction.withdraw')
+}).prefix('api/v1')
