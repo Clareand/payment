@@ -16,7 +16,7 @@ class TransactionController {
 
     try {
       // Lock the customer record for update within the transaction
-      const customerInstance = await Customer.query(trx).where('customer_id', CustomerId).lockForUpdate().first()
+      const customerInstance = await Customer.query(trx).where('customer_id', CustomerId).forUpdate().first()
 
       if (!customerInstance) {
         await trx.rollback()
@@ -26,14 +26,9 @@ class TransactionController {
       const paymentResponse = await PaymentService.processDeposit(amount, orderId, timestamp)
 
       if (paymentResponse.status === 1) {
-        customerInstance.balance += amount
+        const balance = parseInt(customerInstance.balance = customerInstance.balance) + parseInt(amount);
+        customerInstance.balance = balance
         await customerInstance.save(trx)
-        await Customer.query(trx)
-          .where('customer_id', CustomerId)
-          .update({
-            balance: Database.raw('balance + ?', [amount]),
-            updated_at: DateTime.now().toISO()
-          })
 
         const transaction = await Transaction.create({
           customer_id: CustomerId,
