@@ -121,6 +121,20 @@ class TransactionController {
       return response.status(500).json({ message: 'An error occurred', error: error.message })
     }
   }
+
+  async history({ request, response }){
+    const customerId = request.CustomerId;
+
+    try {
+      const transactions = await Transaction.query().where('customer_id',customerId).fetch()
+      return response.status(200).json(transactions)
+    }catch (error) {
+      return response.status(500).json({
+        message: 'An error occurred while fetching transactions',
+        error: error.message,
+      })
+    }
+  }
 }
 
 module.exports = TransactionController

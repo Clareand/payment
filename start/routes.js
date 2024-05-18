@@ -23,4 +23,5 @@ Route.group(()=>{
     Route.post('/users', 'UserController.create')
     Route.post('/deposit', 'TransactionController.deposit').middleware(['checkBearer'])
     Route.post('/withdraw', 'TransactionController.withdraw').middleware(['checkBearer'])
+    Route.get('/history', 'TransactionController.history').middleware(['checkBearer'])
 }).prefix('api/v1')
