@@ -40,7 +40,6 @@ class CheckBearerToken {
 
     // Extract the CustomerId from the customer record
     const { customer_id: CustomerId } = customer;
-    console.log(customer,"Ids")
 
     // Check if the CustomerId is present
     if (!CustomerId) {

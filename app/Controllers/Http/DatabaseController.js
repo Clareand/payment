@@ -4,7 +4,6 @@ const Database = use('Database')
 
 class DatabaseController {
   async checkConnection({ response }) {
-    console.log("check")
     try {
       // Perform a simple query to check the connection
       const result = await Database.raw('SELECT 1+1 AS result')

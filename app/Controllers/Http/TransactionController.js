@@ -7,10 +7,9 @@ const Database = use('Database')
 
 class TransactionController {
   async deposit({ request, response }) {
-    
+    const type = 'deposit'
     const {amount, orderId, timestamp } = request.only(['amount', 'orderId', 'timestamp'])
     const customerId = request.CustomerId;
-    console.log('CustomerId',customerId)
 
     // Start a transaction
     const trx = await Database.beginTransaction()
@@ -33,56 +32,93 @@ class TransactionController {
 
         const transaction = await Transaction.create({
           customer_id: customerId,
-          type: 'deposit',
+          type: type,
           amount,
           order_id: orderId,
           created_at:timestamp,
           status : 1
         }, trx)
-
         await trx.commit()
         return response.status(201).json(transaction)
       } else {
-        const transaction = await Transaction.create({
+        await Transaction.create({
           customer_id: customerId,
-          type: 'deposit',
+          type: type,
           amount,
           order_id: orderId,
           created_at:timestamp,
           status : 2
         }, trx)
-        await trx.commit
+        await trx.commit()
         return response.status(500).json({ message: 'Deposit failed' })
       }
     } catch (error) {
-      await trx.rollback()
+      await Transaction.create({
+        customer_id: customerId,
+        type: 'deposit',
+        amount,
+        order_id: orderId,
+        created_at:timestamp,
+        status : 2
+      }, trx)
+      await trx.commit()
       return response.status(500).json({ message: 'An error occurred', error: error.message })
     }
   }
 
   async withdraw({ request, response }) {
-    const { CustomerId, amount, orderId, timestamp } = request.only(['CustomerId', 'amount', 'orderId', 'timestamp'])
-    const customerInstance = await Customer.find(CustomerId)
+    const type = 'withdrawal'
+    const { amount, orderId, timestamp } = request.only(['amount', 'orderId', 'timestamp'])
+    const customerId = request.CustomerId;
+    const customerInstance = await Customer.find(customerId)
 
-    if (!customerInstance) {
-      return response.status(404).json({ message: 'Customer not found' })
-    }
+    const trx = await Database.beginTransaction()
 
-    if (customerInstance.balance < amount) {
-      return response.status(400).json({ message: 'Insufficient balance' })
-    }
+    try {
+      // Lock the customer row for update
+      const customer = await Customer.query().where('customer_id', customerId).forUpdate().transacting(trx).first()
 
-    const paymentResponse = await PaymentService.processWithdrawal(amount, orderId, timestamp)
+      if (!customer) {
+        await trx.rollback()
+        return response.status(404).json({ message: 'Customer not found' })
+      }
 
-    if (paymentResponse.status === 1) {
-      await customerInstance.lockForUpdate()
-      customerInstance.balance -= amount
-      await customerInstances.save()
+      if (customer.balance < amount) {
+        await trx.rollback()
+        return response.status(400).json({ message: 'Insufficient balance' })
+      }
 
-      const transaction = await Transaction.create({ Customer_id: CustomerId, type: 'withdrawal', amount, order_id: orderId, timestamp })
-      return response.status(201).json(transaction)
-    } else {
-      return response.status(500).json({ message: 'Withdrawal failed' })
+      const paymentResponse = await PaymentService.processWithdrawal(amount, orderId, timestamp)
+
+      if (paymentResponse.status === 1) {
+        customer.balance -= amount
+        await customer.save(trx)
+
+        const transaction = await Transaction.create({
+          customer_id: customerId,
+          type: type,
+          amount,
+          order_id: orderId,
+          created_at:timestamp,
+        }, trx)
+
+        await trx.commit()
+        return response.status(201).json(transaction)
+      } else {
+        await Transaction.create({
+          customer_id: customerId,
+          type: type,
+          amount,
+          order_id: orderId,
+          created_at:timestamp,
+          status : 2
+        }, trx)
+        await trx.commit()
+        return response.status(500).json({ message: 'Withdrawal failed' })
+      }
+    } catch (error) {
+      await trx.rollback()
+      return response.status(500).json({ message: 'An error occurred', error: error.message })
     }
   }
 }
